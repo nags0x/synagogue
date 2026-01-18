@@ -1,0 +1,26 @@
+{
+  "name": "synagogue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nags0x/synagogue.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nags0x/synagogue/issues"
+  },
+  "homepage": "https://github.com/nags0x/synagogue#readme",
+  
+  "dependencies": {
+    "jest": "^29.7.0"
+  }
+}
