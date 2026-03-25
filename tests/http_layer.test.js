@@ -1,6 +1,5 @@
 const { default: axios } = require('axios');
 const dotenv = require('dotenv');
-const { useImperativeHandle } = require('react');
 dotenv.config();
 
 const BACKEND_URL=process.env.BACKEND_URL || "http://localhost:3003";
@@ -620,6 +619,206 @@ describe("Arena Endpoints", () => {
 
         expect(response.data.elements.length).toBe(2);
 
-    })
+    })      
+})
+
+describe("Admin Endpoints", () => {
+    let adminId;
+    let adminToken;
+    let userId;
+    let userToken;
+    let adminElementId;
+
+
+    
+    beforeAll(async() => {
+        let username = `Admin-${Math.random()}`;
+        let password = "123456";
+
+        const adminSignupResponse = await axios.post(`${BACKEND_URL}/api/v1/signup`,{
+            "username": username,
+            "password": password,
+            type: "admin"
+        })
         
+        adminId = adminSignupResponse.data.id;
+
+        const adminSigninResponse = await axios.post(`${BACKEND_URL}/api/v1/signin`,{
+            "username": username,
+            "password": password,
+            type: "admin"
+        })
+
+        adminToken = adminSigninResponse.data.token;
+
+        const userSignupResponse = await axios.post(`${BACKEND_URL}/api/v1/signup`,{
+            "username": username + "-user",
+            "password": password,
+            type: "user"
+        })
+
+        userId = userSignupResponse.data.id;
+
+        const userSigninResponse = await axios.post(`${BACKEND_URL}/api/v1/signin`,{
+            "username": username + "-user",
+            "password": password,
+            type: "user"
+        })
+
+        userToken = userSigninResponse.data.token;
+
+    });
+
+    test("User won't be able to hit the create-elements endpoint", async() => {
+        const response = await axios.post(`${BACKEND_URL}/api/admin/element`,{
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+            "width": 1,
+            "height": 1,
+            "static": true
+        },{
+            headers:{
+                "authorization": `Bearer ${userToken}`
+            }
+        })
+
+        expect(response.status).toBe(403);
+    })
+
+    test("Admin shall be permitted to create an element", async() => {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/admin/element`,{
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+            "width": 1,
+            "height": 1,
+            "static": true
+        },{
+            headers:{
+                "authorization": `Bearer ${adminToken}`
+            }
+        })
+
+        expect(response.statu).toBe(200);
+        adminElementId = response.data.id;
+    })
+
+    test("User shall  not be able to update the element", async() => {
+        const response = await axios.put(`${BACKEND_URL}/api/v1/admin/element/${adminElementId}`,{
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+        },{
+            headers:{
+                "authorization": `Bearer ${userToken}`
+            }
+        })
+
+        expect(response.status).toBe(403);
+
+    })
+
+    test("Admin is able to hit the update-element endpoint successfully", async() => {
+        const response = await axios.put(`${BACKEND_URL}/api/v1/admin/element/${adminElementId}`,{
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcRCRca3wAR4zjPPTzeIY9rSwbbqB6bB2hVkoTXN4eerXOIkJTG1GpZ9ZqSGYafQPToWy_JTcmV5RHXsAsWQC3tKnMlH_CsibsSZ5oJtbakq&usqp=CAE",
+        },{
+            headers:{
+                "authorization": `Bearer ${adminToken}`
+            }
+        })
+
+        expect(response.status).toBe(200);
+    })
+
+    test("User shall not be able to hit admin-avatar endpoint", async() => {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/admin/avatar`,{
+
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQm3RFDZM21teuCMFYx_AROjt-AzUwDBROFww&s",
+            "name": "Timmy"
+        },{
+            headers:{
+                "authorization": `Bearer ${userToken}`
+            }
+        })
+
+        expect(response.status).toBe(403);
+    })
+
+    test("Admin shall be able to hit the admin-avatar endpoint", async() => {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/admin/avatar`,{
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQm3RFDZM21teuCMFYx_AROjt-AzUwDBROFww&s",
+            "name": "Timmy"
+        },{
+            headers:{
+                "authorization": `Bearer ${adminToken}`
+            }
+        })
+
+        expect(response.status).toBe(200);
+        expect(response.data.avatarId).toBeDefined();
+    })
+
+    test("Admin is able the update the avatar-image", async() => {
+        let newImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQm3RFDZM21teuCMFYx_AROjt-AzUwDBROFww&s";
+
+        const response = await axios.post(`${BACKEND_URL}/api/v1/admin/avatar`,{
+            "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQm3RFDZM21teuCMFYx_AROjt-AzUwDBROFww&s",
+            "name": "Timmy"
+        },{
+            headers:{
+                "authorization": `Bearer ${adminToken}`
+            }
+        })
+
+        const updateImageUrlResponse = await axios.put(`${BACKEND_URL}/api/v1/admin/avatar/${response.data.avatarId}`,{
+            "imageUrl": newImageUrl
+        },{
+            headers:{
+                "authorization": `Bearer ${adminToken}`
+            }
+        })
+
+        expect(updateImageUrlResponse.status).toBe(200);
+        expect(updateImageUrlResponse.data.imageUrl).toBe(newImageUrl);
+    })
+
+    test("User fails to access the admin-map endpoint", async () => {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/admin/map`,{
+            "thumbnail": "https://thumbnail.com/a.png",
+            "dimensions": "100x200",
+            "name": "50 people office meeting room",
+            "defaultElements": [{
+                elementId: adminElementId,
+                x: 20,
+                y: 20
+            }]
+            
+        },{
+            headers:{
+                "authorization": `Bearer ${userToken}`
+            }
+        })
+
+        expect(response.status).toBe(403);
+    })
+
+    test("Admin is able to hit the admin-map endpoint", async() => {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/admin/map`,{
+            "thumbnail": "https://thumbnail.com/a.png",
+            "dimensions": "100x200",
+            "name": "50 people office meeting room",
+            "defaultElements": [{
+                elementId: adminElementId,
+                x: 20,
+                y: 20
+            }]
+        },{
+            headers:{
+                "authorization": `Bearer ${adminToken}`
+            }
+        })
+
+        expect(response.status).toBe(200);
+        expect(response.data.defaultElements.length).toBe(1);
+        expect(response.data.defaultElements[0].elementId).toBe(adminElementId);
+    })
+
+
+
+
 })
