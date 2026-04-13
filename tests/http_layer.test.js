@@ -817,8 +817,5 @@ describe("Admin Endpoints", () => {
         expect(response.data.defaultElements.length).toBe(1);
         expect(response.data.defaultElements[0].elementId).toBe(adminElementId);
     })
-
-
-
-
+    
 })
