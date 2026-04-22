@@ -21,7 +21,7 @@ export const CreateSpaceSchema = z.object({
     name: z.string(),
     dimensions: z.string().regex(/^[0-9]{1,4}x[0-9]{1,4}$/),
     mapId: z.string()
-}
+})
 
 export const CreateElementSchema = z.object({
     imageUrl: z.string(),
@@ -29,7 +29,6 @@ export const CreateElementSchema = z.object({
     height: z.number(),
     static: z.boolean(),
 })
-\
 
 export const AddElementSchema = z.object({
     elementId: z.string(),
